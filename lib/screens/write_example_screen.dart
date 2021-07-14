@@ -1,19 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:nfc_in_flutter/nfc_in_flutter.dart';
 import 'dart:async';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 
 class RecordEditor {
-  TextEditingController mediaTypeController;
-  TextEditingController payloadController;
+  String grade;
+  TextEditingController name;
 
   RecordEditor() {
-    mediaTypeController = TextEditingController();
-    payloadController = TextEditingController();
+    grade = "pre-k";
+    name = TextEditingController();
   }
 }
 
 class WriteExampleScreen extends StatefulWidget {
+  final ids;
+  final students;
+  final List<String> grades;
+
+  const WriteExampleScreen({Key key, this.ids, this.students, this.grades})
+      : super(key: key);
+
   @override
   _WriteExampleScreenState createState() => _WriteExampleScreenState();
 }
@@ -22,6 +32,8 @@ class _WriteExampleScreenState extends State<WriteExampleScreen> {
   StreamSubscription<NDEFMessage> _stream;
   List<RecordEditor> _records = [];
   bool _hasClosedWriteDialog = false;
+  int currentIndex = 50;
+  String currentMessage = '';
 
   void _addRecord() {
     setState(() {
@@ -30,36 +42,55 @@ class _WriteExampleScreenState extends State<WriteExampleScreen> {
   }
 
   void _write(BuildContext context) async {
+    var uuid = Uuid();
+
+    String userId = uuid.v1();
+    Get.defaultDialog(
+        content: Center(
+      child: CircularProgressIndicator(),
+    ));
+    var response = await http
+        .post(Uri.tryParse("https://tzzu7v.deta.dev/createStudent"), body: {
+      "name": _records.first.name.text,
+      "grade": _records.first.grade,
+      "id": userId,
+      "currentSecret": widget.ids[currentIndex]
+    });
+    print(response.statusCode);
+    Get.back();
     List<NDEFRecord> records = _records.map((record) {
       return NDEFRecord.type(
         'text/plain',
-        record.payloadController.text,
+        '${widget.ids[currentIndex]}_$userId',
       );
     }).toList();
     NDEFMessage message = NDEFMessage.withRecords(records);
 
-    if (Platform.isAndroid) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Scan the tag you want to write to"),
-          actions: <Widget>[
-            TextButton(
-              child: const Text("Cancel"),
-              onPressed: () {
-                _hasClosedWriteDialog = true;
-                _stream?.cancel();
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      );
-    }
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Scan the tag you want to write to"),
+        actions: <Widget>[
+          TextButton(
+            child: const Text("Cancel"),
+            onPressed: () {
+              _hasClosedWriteDialog = true;
+              _stream?.cancel();
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
 
+    print(message.payload);
     // Write to the first tag scanned
     await NFC.writeNDEF(message).first;
     //close the dialog
+    setState(() {
+      currentMessage = "Index: $currentIndex\nNew: ${widget.ids[currentIndex]}";
+    });
+    currentIndex += 1;
     Navigator.pop(context);
   }
 
@@ -74,11 +105,10 @@ class _WriteExampleScreenState extends State<WriteExampleScreen> {
         padding: const EdgeInsets.all(20),
         children: <Widget>[
           Center(
-            child: OutlinedButton(
-              child: const Text("Add record"),
-              onPressed: _addRecord,
-            ),
-          ),
+              child: OutlinedButton(
+            child: const Text("Add record"),
+            onPressed: _records.length < 1 ? _addRecord : null,
+          )),
           for (var record in _records)
             Padding(
               padding: const EdgeInsets.only(bottom: 30),
@@ -87,10 +117,39 @@ class _WriteExampleScreenState extends State<WriteExampleScreen> {
                 children: <Widget>[
                   Text("Record", style: Theme.of(context).textTheme.body2),
                   TextFormField(
-                    controller: record.payloadController,
+                    controller: record.name,
                     decoration: InputDecoration(
-                      hintText: "Payload",
+                      hintText: "Name",
                     ),
+                  ),
+                  DropdownButton<String>(
+                    focusColor: Colors.white,
+                    value: record.grade,
+                    //elevation: 5,
+                    style: TextStyle(color: Colors.white),
+                    iconEnabledColor: Colors.black,
+                    items: widget.grades
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: TextStyle(color: Colors.black),
+                        ),
+                      );
+                    }).toList(),
+                    hint: Text(
+                      "Please choose a langauage",
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500),
+                    ),
+                    onChanged: (String value) {
+                      setState(() {
+                        record.grade = value;
+                      });
+                    },
                   )
                 ],
               ),
@@ -100,6 +159,13 @@ class _WriteExampleScreenState extends State<WriteExampleScreen> {
               child: const Text("Write to tag"),
               onPressed: _records.length > 0 ? () => _write(context) : null,
             ),
+          ),
+          Text(
+            'Current message is:\n ${currentMessage.isNotEmpty ? currentMessage : "\"empty\""}',
+            style: TextStyle(
+              fontSize: 30,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

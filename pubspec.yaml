@@ -21,6 +21,10 @@ environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
+  get:
+  http:
+  crypto:
+  uuid:
   random_string: ^2.1.0
   nfc_in_flutter: ^2.0.5
   flutter:

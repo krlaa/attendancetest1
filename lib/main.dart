@@ -1,10 +1,23 @@
+import 'dart:convert';
+
+import 'package:attendancetest1/models/student_model.dart';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import 'screens/read_example_screen.dart';
 import 'screens/write_example_screen.dart';
 import 'package:random_string/random_string.dart';
+import 'dart:developer';
 import 'package:random_string/random_string.dart';
+import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
 
-void main() => runApp(ExampleApp());
+void main() {
+  Uuid u = Uuid();
+  String s = u.v5(Uuid.NAMESPACE_NIL, "fifth");
+
+  print(s);
+  runApp(ExampleApp());
+}
 
 class ExampleApp extends StatefulWidget {
   @override
@@ -37,38 +50,59 @@ class _ExampleAppState extends State<ExampleApp> {
   void initState() {
     generateIds();
     checkDuplicates();
-    print(idList);
     super.initState();
   }
 
+  List<String> grades = [
+    "pre-k",
+    "kindergarten"
+        "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth",
+    "ninth",
+    "tenth",
+    "eleventh",
+    "twelfth"
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text("NFC in Flutter examples"),
-        ),
-        body: Builder(builder: (context) {
-          return ListView(
+          appBar: AppBar(
+            title: const Text("NFC in Flutter examples"),
+          ),
+          body: ListView(
             children: <Widget>[
               ListTile(
                 title: const Text("Read NFC"),
                 onTap: () {
-                  Navigator.pushNamed(context, "/read_example");
+                  Get.to(ReadExampleScreen(
+                    id: idList,
+                    grades: grades,
+                  ));
                 },
               ),
               ListTile(
                 title: const Text("Write NFC"),
                 onTap: () {
-                  Navigator.pushNamed(context, "/write_example");
+                  Get.to(WriteExampleScreen(
+                    ids: idList,
+                    grades: grades,
+                  ));
                 },
               ),
             ],
-          );
-        }),
-      ),
+          )),
       routes: {
-        "/read_example": (context) => ReadExampleScreen(),
+        "/read_example": (context) => ReadExampleScreen(
+              id: idList,
+            ),
         "/write_example": (context) => WriteExampleScreen(),
       },
     );
