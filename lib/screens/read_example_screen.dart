@@ -57,6 +57,7 @@ class _ReadExampleScreenState extends State<ReadExampleScreen> {
           .readNDEF(alertMessage: "Custom message with readNDEF#alertMessage")
           .listen((NDEFMessage message) async {
         print("Read NDEF message with ${message.records.length} records");
+        print(message.tag.id);
         var record = message.records[0];
         print(record.data.split("_"));
         var uuid = record.data.split('_')[1];
@@ -70,6 +71,7 @@ class _ReadExampleScreenState extends State<ReadExampleScreen> {
             });
             message.tag.write(NDEFMessage.withRecords(
                 [NDEFRecord.type('text/plain', "${id[currentIndex]}_$uuid")]));
+            studentList[uuid]["currentSecret"] = id[currentIndex];
             compute(
                 sendChange,
                 Map.from({

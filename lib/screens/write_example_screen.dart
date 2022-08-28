@@ -1,5 +1,7 @@
+import 'package:attendancetest1/functions/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:nfc_in_flutter/nfc_in_flutter.dart';
 import 'dart:async';
 import 'dart:io';
@@ -42,13 +44,19 @@ class _WriteExampleScreenState extends State<WriteExampleScreen> {
   }
 
   void _write(BuildContext context) async {
+    print(encryptStringWithXORtoHex(
+        "${_records.first.name.text}/${_records.first.grade}/${DateTime.now().toIso8601String()}",
+        KEY));
     var uuid = Uuid();
 
-    String userId = uuid.v1();
+    String userId = encryptStringWithXORtoHex(
+        "${_records.first.name.text}/${_records.first.grade}/${DateFormat('HH-mm-ss').format(DateTime.now())}",
+        KEY);
     Get.defaultDialog(
+        title: "Uploading",
         content: Center(
-      child: CircularProgressIndicator(),
-    ));
+          child: CircularProgressIndicator(),
+        ));
     var response = await http
         .post(Uri.tryParse("https://tzzu7v.deta.dev/createStudent"), body: {
       "name": _records.first.name.text,

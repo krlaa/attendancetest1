@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:attendancetest1/models/student_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import 'functions/crypto.dart';
 import 'screens/read_example_screen.dart';
 import 'screens/write_example_screen.dart';
 import 'package:random_string/random_string.dart';
@@ -12,10 +14,11 @@ import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 
 void main() {
-  Uuid u = Uuid();
-  String s = u.v5(Uuid.NAMESPACE_NIL, "fifth");
-
-  print(s);
+  print(encryptStringWithXORtoHex(
+      "Kevin Antony/pre-k/${DateFormat('HH-mm-ss').format(DateTime.now())}",
+      KEY));
+  print(decryptStringWithXORFromHex(
+      "280a065d576f715a001b0b174b111c06485c4a434c4e5d44190979", KEY));
   runApp(ExampleApp());
 }
 
@@ -55,8 +58,8 @@ class _ExampleAppState extends State<ExampleApp> {
 
   List<String> grades = [
     "pre-k",
-    "kindergarten"
-        "first",
+    "kindergarten",
+    "first",
     "second",
     "third",
     "fourth",
